@@ -1,0 +1,89 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+# GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}
+
+{% set attr_features = [
+  "expand-external-labels", "remote-write-receiver",
+  "exemplar-storage", "memory-snapshot-on-shutdown",
+  "extra-scrape-metrics", "new-service-discovery-manager",
+  "agent", "promql-per-step-stats",
+  "auto-gomaxprocs" ] %}
+
+command_args="
+{% if alertmanager_service is defined %}
+  {# log configuration #}
+  --log.level={{ alertmanager_service.log.level | default('info') }} \
+  {% if alertmanager_service.log.format is defined and
+        alertmanager_service.log.format in ["logfmt", "json"] %}
+  --log.format={{alertmanager_service.log.format }} \
+  {% endif %}
+  {# storage configuration #}
+  {% if alertmanager_service.storage.tsdb.path is defined %}
+  --storage.tsdb.path={{ alertmanager_service.storage.tsdb.path }} \
+  {% endif %}
+  {% if alertmanager_version is version('2.7.0', '>=') %}
+    {% if alertmanager_service.storage.tsdb.retention.time is defined and
+          alertmanager_service.storage.tsdb.retention.time | string | length > 0 %}
+  --storage.tsdb.retention.time={{ alertmanager_service.storage.tsdb.retention.time }} \
+    {% endif %}
+    {% if alertmanager_service.storage.tsdb.retention.size is defined and
+          alertmanager_service.storage.tsdb.retention.size | string | length > 0 %}
+  --storage.tsdb.retention.size={{ alertmanager_service.storage.tsdb.retention.size }} \
+    {% endif %}
+  {% else %}
+    {% if alertmanager_service.storage.tsdb.retention is defined and
+          not alertmanager_service.storage.tsdb.retention | type == "dict" %}
+  --storage.tsdb.retention={{ alertmanager_service.storage.tsdb.retention }} \
+    {% endif %}
+  {% endif %}
+  {% if alertmanager_version is version('2.24.0', '>=') and
+        alertmanager_service.web.config.file is defined and
+        alertmanager_service.web.config.file | string | length > 0 %}
+    --web.config.file={{ alertmanager_config_dir }}/{{ alertmanager_service.web.config.file | default('web.yml') }} \
+  {% endif %}
+  {# web configuration #}
+  --web.console.libraries={{ alertmanager_config_dir }}/console_libraries \
+  --web.console.templates={{ alertmanager_config_dir }}/consoles \
+  {% if alertmanager_service.web.listen_address is defined and
+        alertmanager_service.web.listen_address | string | length > 0 %}
+  --web.listen-address={{ alertmanager_service.web.listen_address }} \
+  {% endif %}
+  {% if alertmanager_service.web.external_url is defined and
+        alertmanager_service.web.external_url | string | length > 0 %}
+  --web.external-url={{ alertmanager_service.web.external_url }} \
+  {% endif %}
+  {% if alertmanager_service.web.enable_admin_api is defined and
+        alertmanager_service.web.enable_admin_api %}
+  --web.enable-admin-api \
+  {# feature configuration #}
+  {% endif %}
+  {% if alertmanager_service.features is defined and
+        alertmanager_service.features | type == "list" and
+        alertmanager_service.features | count > 0 and
+        alertmanager_service.features in attr_features %}
+  --enable-feature={{ alertmanager_service.features | join(', ') }}
+  {% endif %}
+  {% if alertmanager_service.raw_flags is defined %}
+    {% for flag, flag_value in alertmanager_service.raw_flags.items() %}
+      {% if not flag_value %}
+  --{{ flag }} \
+      {% elif flag_value is string %}
+  --{{ flag }}={{ flag_value }} \
+      {% elif flag_value is sequence %}
+        {% for flag_value_item in flag_value %}
+  --{{ flag }}={{ flag_value_item }} \
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endif %}
+  --config.file={{ alertmanager_config_dir }}/prometheus.yml
+"
+
+# command_args="
+#   --config.file=/etc/prometheus/prometheus.yml
+#   --storage.tsdb.retention.time=365d
+#   --storage.tsdb.path=/var/lib/prometheus/data
+#   --web.listen-address="0.0.0.0:9090"
+#   --web.enable-admin-api"

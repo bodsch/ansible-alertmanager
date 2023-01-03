@@ -1,0 +1,82 @@
+#!/usr/bin/openrc-run
+
+# Copyright 2016-2018 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+description="Prometheus monitoring system and time series database"
+pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
+user=${user:-${SVCNAME}}
+group=${group:-${SVCNAME}}
+
+command="/usr/bin/prometheus"
+command_args="${command_args:--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus/data}"
+command_user="${user}:${group}"
+output_log="/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log"
+error_log="${output_log}"
+extra_started_commands="reload"
+
+depend() {
+  after net
+}
+
+configtest() {
+  ebegin "Checking prometheus' configuration"
+
+  promtool check config /etc/prometheus/prometheus.yml
+
+  if [ $? -gt 0 ]; then
+    eend $? "failed, please correct errors above"
+  fi
+}
+
+start_pre() {
+  if [ "${RC_CMD}" != "restart" ]; then
+          configtest || return 1
+  fi
+
+  [ -d $(dirname ${output_log}) ] ||  mkdir $(dirname ${output_log})
+  chown -R ${command_user} $(dirname ${output_log})
+  chown -R ${command_user} /var/lib/prometheus/
+}
+
+stop_pre() {
+  if [ "${RC_CMD}" = "restart" ]; then
+    configtest || return 1
+  fi
+}
+
+start() {
+  ebegin "Starting ${SVCNAME}"
+
+  start-stop-daemon --start \
+    --background \
+    --exec "${command}" \
+    --stdout ${output_log} \
+    --stderr ${error_log} \
+    --pidfile ${pidfile} \
+    --user ${command_user} \
+    -- ${command_args}
+
+  pidof prometheus > "${pidfile}"
+
+  eend $? "Failed to start ${SVCNAME}"
+}
+
+stop() {
+  ebegin "Stopping ${SVCNAME}"
+  start-stop-daemon --stop \
+    --pidfile "${pidfile}"
+
+  eend $? "Failed to stop ${SVCNAME}"
+}
+
+
+reload() {
+  ebegin "Reloading ${SVCNAME}"
+  if [ ! -r "${pidfile}" ]; then
+    eend 1 "automount not running"
+  else
+    kill -s HUP $(cat "${pidfile}") 2> /dev/null
+    eend $?
+  fi
+}

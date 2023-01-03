@@ -1,0 +1,10 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+---
+# {{ ansible_managed }}
+
+{% include('alertmanager.d/global.j2') %}
+{% include('alertmanager.d/templates.j2') %}
+{% include('alertmanager.d/routes.j2') %}
+{% include('alertmanager.d/receivers.j2') %}
+{% include('alertmanager.d/inhibit_rules.j2') %}
+{% include('alertmanager.d/time_intervals.j2') %}

@@ -1,0 +1,26 @@
+---
+
+alertmanager_version: 0.25.0
+
+alertmanager_release_download_url: https://github.com/prometheus/alertmanager/releases
+
+alertmanager_system_user: alertmanager
+alertmanager_system_group: alertmanager
+alertmanager_config_dir: /etc/alertmanager
+alertmanager_data_dir: /var/lib/alertmanager
+
+alertmanager_enable_experimental: false
+
+alertmanager_direct_download: false
+
+alertmanager_amtool: {}
+
+alertmanager_service: {}
+alertmanager_global: {}
+
+alertmanager_receivers: []
+alertmanager_routes: {}
+alertmanager_inhibit_rules: {}
+alertmanager_time_intervals: {}
+
+...

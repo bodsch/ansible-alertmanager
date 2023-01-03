@@ -1,0 +1,30 @@
+---
+
+- name: restart alertmanager
+  become: true
+  service:
+    name: alertmanager
+    state: restarted
+
+- name: reload alertmanager
+  become: true
+  service:
+    name: alertmanager
+    state: reloaded
+
+- name: validate config
+  command: |
+    /usr/bin/amtool \
+      check-config \
+      --verbose \
+      {{ alertmanager_config_dir }}/alertmanager.yml
+
+- name: daemon-reload
+  become: true
+  systemd:
+    daemon_reload: true
+    force: true
+  when:
+    - ansible_service_mgr | lower == "systemd"
+
+...

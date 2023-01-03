@@ -1,0 +1,131 @@
+---
+
+- name: detect binary file for alertmanager
+  become: false
+  delegate_to: "{{ alertmanager_delegate_to }}"
+  run_once: "{{ 'false' if alertmanager_direct_download else 'true' }}"
+  stat:
+    path: "{{ alertmanager_local_tmp_directory }}/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}/alertmanager"
+  register: stat_file_binary
+
+- name: propagate files
+  when:
+    - stat_file_binary.stat.exists
+  block:
+    - name: propagate alertmanager binaries
+      copy:
+        src: "{{ alertmanager_local_tmp_directory }}/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}/{{ item }}"
+        dest: "{{ alertmanager_install_path }}/{{ item }}"
+        mode: 0755
+        owner: "{{ alertmanager_system_user }}"
+        group: "{{ alertmanager_system_group }}"
+        remote_src: "{{ 'true' if alertmanager_direct_download else 'false' }}"
+      loop:
+        - alertmanager
+        - amtool
+
+- name: make files executable
+  file:
+    path: "{{ alertmanager_install_path }}/{{ item }}"
+    mode: 0755
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+  loop:
+    - alertmanager
+    - amtool
+
+- name: create local facts
+  template:
+    src: ansible_facts.j2
+    dest: /etc/ansible/facts.d/alertmanager.fact
+    mode: 0755
+
+- name: create link to binary
+  file:
+    src: "{{ alertmanager_install_path }}/{{ item }}"
+    dest: "/usr/bin/{{ item }}"
+    state: link
+    force: true
+    follow: false
+  loop:
+    - alertmanager
+    - amtool
+  notify:
+    - restart alertmanager
+
+- name: create alertmanager data directory
+  file:
+    path: "{{ alertmanager_data_dir }}"
+    state: directory
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+    mode: 0755
+
+- name: systemd
+  when:
+    - ansible_service_mgr | lower == "systemd"
+  block:
+    - name: create alertmanager run configuration
+      template:
+        src: "alertmanager.j2"
+        dest: "{{ alertmanager_defaults_directory }}/alertmanager"
+        force: true
+        owner: root
+        group: "{{ alertmanager_system_group }}"
+        mode: 0640
+
+    - name: create systemd service unit
+      template:
+        src: "init/systemd/alertmanager.service.j2"
+        dest: "{{ systemd_lib_directory }}/alertmanager.service"
+        owner: root
+        group: root
+        mode: 0644
+      notify:
+        - daemon-reload
+
+- name: openrc
+  when:
+    - ansible_service_mgr | lower == "openrc"
+  block:
+    - name: create openrc service configuration
+      template:
+        src: "init/openrc/conf.d/alertmanager.j2"
+        dest: "/etc/conf.d/alertmanager"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: create openrc init configuration
+      template:
+        src: "init/openrc/init.d/alertmanager.j2"
+        dest: "/etc/init.d/alertmanager"
+        owner: root
+        group: root
+        mode: 0750
+
+- name: create rules directory
+  file:
+    state: directory
+    path: "{{ alertmanager_config_dir }}/rules"
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+    mode: 0750
+
+- name: create targets directory
+  file:
+    state: directory
+    path: "{{ alertmanager_config_dir }}/targets"
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+    mode: 0750
+
+- name: create file_sd directory
+  file:
+    state: directory
+    path: "{{ alertmanager_config_dir }}/file_sd"
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+    mode: 0750
+
+...

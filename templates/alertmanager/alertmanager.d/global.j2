@@ -1,0 +1,120 @@
+#
+global:
+  {% if alertmanager_global.resolve_timeout is defined and
+        alertmanager_global.resolve_timeout | string | length > 0 %}
+  resolve_timeout: {{ alertmanager_global.resolve_timeout }}
+  {% endif %}
+  {# smtp #}
+  {% if alertmanager_global.smtp.smarthost is defined and
+        alertmanager_global.smtp.smarthost | string | length > 0 %}
+  smtp_smarthost: {{ alertmanager_global.smtp.smarthost }}
+    {% if alertmanager_global.smtp.from is defined and
+          alertmanager_global.smtp.from | string | length > 0 %}
+  smtp_from: {{ alertmanager_global.smtp.from }}
+    {% endif %}
+    {% if alertmanager_global.smtp.hello is defined and
+          alertmanager_global.smtp.hello | string | length > 0 %}
+  smtp_hello: {{ alertmanager_global.smtp.hello }}
+    {% endif %}
+    {% if (
+            alertmanager_global.smtp.auth.username is defined and
+            alertmanager_global.smtp.auth.username | string | length > 0 and
+            alertmanager_global.smtp.auth.password is defined and
+            alertmanager_global.smtp.auth.password | string | length > 0
+          ) or (
+            alertmanager_global.smtp.auth.password_file is defined and
+            alertmanager_global.smtp.auth.password_file | string | length > 0
+          ) %}
+      {% if alertmanager_global.smtp.auth.username is defined and
+            alertmanager_global.smtp.auth.username | string | length > 0 %}
+  smtp_auth_username: {{ alertmanager_global.smtp.auth.username }}
+      {% endif %}
+      {% if alertmanager_global.smtp.auth.password is defined and
+            alertmanager_global.smtp.auth.password | string | length > 0 %}
+  smtp_auth_password: {{ alertmanager_global.smtp.auth.password }}
+      {% endif %}
+      {% if alertmanager_global.smtp.auth.password_file is defined and
+            alertmanager_global.smtp.auth.password_file | string | length > 0 %}
+  smtp_auth_password_file: {{ alertmanager_global.smtp.auth.password_file }}
+      {% endif %}
+      {% if alertmanager_global.smtp.auth.identity is defined and
+            alertmanager_global.smtp.auth.identity | string | length > 0 %}
+  smtp_auth_identity: {{ alertmanager_global.smtp.auth.identity }}
+      {% endif %}
+      {% if alertmanager_global.smtp.auth.secret is defined and
+            alertmanager_global.smtp.auth.secret | string | length > 0 %}
+  smtp_auth_secret: {{ alertmanager_global.smtp.auth.secret }}
+      {% endif %}
+    {% endif %}
+    {% if alertmanager_global.smtp.require_tls is defined %}
+  smtp_require_tls: {{ alertmanager_global.smtp.require_tls | bool | ternary('true', 'false') }}
+    {% endif %}
+  {% endif %}
+  {# slack #}
+  {% if alertmanager_global.slack.api_url is defined and
+        alertmanager_global.slack.api_url | string | length > 0 %}
+  slack_api_url: {{ alertmanager_global.slack.api_url }}
+  {% endif %}
+  {% if alertmanager_global.slack.api_url_file is defined and
+        alertmanager_global.slack.api_url_file | string | length > 0 %}
+  slack_api_url_file: {{ alertmanager_global.slack.api_url_file }}
+  {% endif %}
+  {# victorops #}
+  {% if alertmanager_global.victorops.api_key is defined and
+        alertmanager_global.victorops.api_key | string | length > 0 %}
+  victorops_api_key: {{ alertmanager_global.victorops.api_key }}
+  {% endif %}
+  {% if alertmanager_global.victorops.api_key_file is defined and
+        alertmanager_global.victorops.api_key_file | string | length > 0 %}
+  victorops_api_key_file: {{ alertmanager_global.victorops.api_key_file }}
+  {% endif %}
+  {% if alertmanager_global.victorops.api_url is defined and
+        alertmanager_global.victorops.api_url | string | length > 0 %}
+  victorops_api_url: {{ alertmanager_global.victorops.api_url }}
+  {% endif %}
+  {# pagerduty #}
+  {% if alertmanager_global.pagerduty.url is defined and
+        alertmanager_global.pagerduty.url | string | length > 0 %}
+  pagerduty_url: {{ alertmanager_global.pagerduty.url }}
+  {% endif %}
+  {# opsgenie #}
+  {% if alertmanager_global.opsgenie.api_key is defined and
+        alertmanager_global.opsgenie.api_key | string | length > 0 %}
+  opsgenie_api_key: {{ alertmanager_global.opsgenie.api_key }}
+  {% endif %}
+  {% if alertmanager_global.opsgenie.api_key_file is defined and
+        alertmanager_global.opsgenie.api_key_file | string | length > 0 %}
+  opsgenie_api_key_file: {{ alertmanager_global.opsgenie.api_key_file }}
+  {% endif %}
+  {% if alertmanager_global.opsgenie.api_url is defined and
+        alertmanager_global.opsgenie.api_url | string | length > 0 %}
+  opsgenie_api_url: {{ alertmanager_global.opsgenie.api_url }}
+  {% endif %}
+  {# wechat #}
+  {% if alertmanager_global.wechat.secret is defined and
+        alertmanager_global.wechat.secret | string | length > 0 %}
+  wechat_api_secret: {{ alertmanager_global.wechat.secret }}
+  {% endif %}
+  {% if alertmanager_global.wechat.api_corp_id is defined and
+        alertmanager_global.wechat.api_corp_id | string | length > 0 %}
+  wechat_api_corp_id: {{ alertmanager_global.wechat.api_corp_id }}
+  {% endif %}
+  {% if alertmanager_global.wechat.api_url is defined and
+        alertmanager_global.wechat.api_url | string | length > 0 %}
+  wechat_api_url: {{ alertmanager_global.wechat.api_url }}
+  {% endif %}
+  {# telegram #}
+  {% if alertmanager_global.telegram.api_url is defined and
+        alertmanager_global.telegram.api_url | string | length > 0 %}
+  telegram_api_url: {{ alertmanager_global.telegram.api_url }}
+  {% endif %}
+  {# webex #}
+  {% if alertmanager_global.webex.api_url is defined and
+        alertmanager_global.webex.api_url | string | length > 0 %}
+  webex_api_url: {{ alertmanager_global.webex.api_url }}
+  {% endif %}
+  {% if alertmanager_global.http_config is defined and
+        alertmanager_global.http_config | string | length > 0 %}
+  # The default HTTP client configuration
+  http_config: {{ alertmanager_global.http_config }}
+  {% endif %}

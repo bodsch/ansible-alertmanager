@@ -1,0 +1,7 @@
+{% if alertmanager_inhibit_rules is defined and
+      alertmanager_inhibit_rules | count > 0 %}
+
+# A list of inhibition rules.
+inhibit_rules:
+{{ alertmanager_inhibit_rules | to_nice_yaml(indent=2) }}
+{% endif %}

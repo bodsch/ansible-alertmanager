@@ -1,0 +1,205 @@
+---
+
+- name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      paths:
+        - "vars"
+      files:
+        # eg. debian-10 / ubuntu-20.04 / centos-8 / oraclelinux-8
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        # eg. archlinux-systemd / archlinux-openrc
+        - "{{ ansible_distribution | lower }}-{{ ansible_service_mgr | lower }}.yml"
+        # eg. debian / ubuntu / centos / oraclelinux
+        - "{{ ansible_distribution | lower }}.yml"
+        # eg. redhat / debian / archlinux
+        - "{{ ansible_os_family | lower }}.yml"
+        # artixlinux
+        - "{{ ansible_os_family | lower | replace(' ', '') }}.yml"
+        - default.yaml
+      skip: true
+
+- name: update package cache
+  package:
+    update_cache: true
+
+- name: define delegate instance for download handling
+  set_fact:
+    alertmanager_delegate_to: "{{ ansible_host }}"
+    alertmanager_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/alertmanager', true) }}/{{ alertmanager_version }}"
+  when:
+    - alertmanager_direct_download
+
+- name: install dependency
+  package:
+    name: "{{ alertmanager_requirements }}"
+    state: present
+  when:
+    - alertmanager_requirements | default([]) | count > 0
+
+- name: latest release
+  when:
+    - alertmanager_version == "latest"
+  block:
+    - name: get latest release
+      delegate_to: localhost
+      become: false
+      run_once: true
+      uri:
+        url: "https://api.github.com/repos/prometheus/alertmanager/releases/latest"
+        method: GET
+        return_content: true
+        status_code: 200
+        body_format: json
+        validate_certs: false
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      # no_log: "{{ not lookup('env', 'ANSIBLE_DEBUG') | bool }}"
+      register: _latest_release
+      until: _latest_release.status == 200
+      retries: 5
+
+    - name: re-define alertmanager_version
+      set_fact:
+        alertmanager_version: "{{ _latest_release.json.tag_name[1:] }}"
+
+- name: detect our installation path '{{ alertmanager_install_path | dirname }}'
+  stat:
+    path: "{{ alertmanager_install_path | dirname }}"
+    get_checksum: false
+  register: stat_alertmanager_path
+  ignore_errors: true
+
+- name: old installation
+  when:
+    - stat_alertmanager_path is defined
+    - stat_alertmanager_path.stat is defined
+    - stat_alertmanager_path.stat.isdir is defined
+    - not stat_alertmanager_path.stat.isdir
+  block:
+    - name: stop old service
+      service:
+        name: prometheus
+        state: stopped
+        enabled: false
+      notify:
+        - daemon-reload
+
+    - name: remove installed systemd unit
+      file:
+        state: absent
+        path: /etc/systemd/system/alertmanager.service
+      when:
+        - ansible_service_mgr | lower == "systemd"
+
+    - name: remove installed alertmanager
+      file:
+        state: absent
+        path: "{{ stat_alertmanager_path.stat.path }}"
+
+- name: flush handlers
+  meta: flush_handlers
+
+- name: detect installed alertmanager binary
+  stat:
+    path: "{{ alertmanager_install_path }}/alertmanager"
+  register: stat_alertmanager_binary
+
+- name: create download directory
+  become: false
+  delegate_to: "{{ alertmanager_delegate_to }}"
+  file:
+    path: "{{ alertmanager_local_tmp_directory }}"
+    state: directory
+    mode: 0750
+
+- name: user and group handling
+    - alertmanager_system_user != "root"
+  when:
+  block:
+    - name: create alertmanager group
+      group:
+        name: "{{ alertmanager_system_group }}"
+        state: present
+        system: true
+
+    - name: create alertmanager user
+      user:
+        name: "{{ alertmanager_system_user }}"
+        groups: "{{ alertmanager_system_group }}"
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        createhome: false
+        home: /nonexistent
+
+- name: create install directory
+  file:
+    path: "{{ alertmanager_install_path }}"
+    state: directory
+    owner: "{{ alertmanager_system_user }}"
+    group: "{{ alertmanager_system_group }}"
+    mode: 0755
+
+- name: create ansible local facts directory
+  file:
+    dest: /etc/ansible/facts.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: merge alertmanager configuration between defaults and custom
+  set_fact:
+    alertmanager_service: "{{ alertmanager_defaults_service | combine(alertmanager_service, recursive=True) }}"
+    alertmanager_global: "{{ alertmanager_defaults_global | combine(alertmanager_global, recursive=True) }}"
+    # alertmanager_receivers: "{{ alertmanager_defaults_receivers | union(alertmanager_receivers) }}"
+    alertmanager_routes: "{{ alertmanager_defaults_routes | combine(alertmanager_routes, recursive=True) }}"
+    alertmanager_inhibit_rules: "{{ alertmanager_defaults_inhibit_rules | combine(alertmanager_inhibit_rules, recursive=True) }}"
+    alertmanager_time_intervals: "{{ alertmanager_defaults_time_intervals | combine(alertmanager_time_intervals, recursive=True) }}"
+
+- name: merge amtool configuration between defaults and custom
+  set_fact:
+    alertmanager_amtool: "{{ alertmanager_defaults_amtool | combine(alertmanager_amtool, recursive=True) }}"
+
+# -----------
+
+# - name: validate file_sd config in alertmanager_scrape_configs
+#   set_fact:
+#     missing_target_definition: "{{ alertmanager_scrape_configs | validate_file_sd(alertmanager_file_sd_targets) }}"
+#
+# - name: Fail when file_sd targets are not defined in alertmanager_scrape_configs
+#   fail:
+#     msg: "For the following files a definition in alertmanager_file_sd_targets is missing:\n
+#       {{ missing_target_definition | join('\n') }}"
+#   when:
+#     - missing_target_definition is defined
+#     - missing_target_definition | count > 0
+#
+# - name: alertmanager endpoints
+#   block:
+#     - name: validate alertmanager configs
+#       set_fact:
+#         validated_endpoints: "{{ alertmanager_alerting.alertmanagers | validate_alertmanager_endpoints }}"
+#
+#     - name: Fail when the endpoints not present or not supported
+#       fail:
+#         msg: "The Alertmanager endpoint ar not valid!\nPlease check your config!\n
+#              Currently supported endpoints are:\n
+#               - {{ validated_endpoints[2] | join('\n - ') }}\n
+#              found endpoints:\n
+#               - {{ validated_endpoints[1] | default(['']) | join('\n - ') }}\n"
+#       when:
+#         - validated_endpoints is defined
+#         - validated_endpoints[0] is defined
+#         - not validated_endpoints[0]
+#
+#   when:
+#     - alertmanager_alerting is defined
+#     - alertmanager_alerting.alertmanagers is defined
+#     - alertmanager_alerting.alertmanagers | count > 0
+
+...

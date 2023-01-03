@@ -1,0 +1,6 @@
+---
+
+- name: prometheus
+  src: bodsch.prometheus
+
+...

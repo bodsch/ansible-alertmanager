@@ -1,0 +1,40 @@
+---
+
+- name: checksum
+  become: false
+  delegate_to: localhost
+  run_once: true
+  block:
+    - name: get checksum list
+      set_fact:
+        __alertmanager_checksums: "{{ lookup('url', alertmanager_release_download_url + '/download/' + __alertmanager_files.checksum, wantlist=True) | list }}"
+
+    - name: get checksum for {{ go_arch }} architecture
+      set_fact:
+        __alertmanager_checksum: "{{ __alertmanager_checksums | alertmanager_checksum('linux', go_arch) }}"
+
+- name: download alertmanager binary archive
+  become: false
+  delegate_to: "{{ alertmanager_delegate_to }}"
+  run_once: "{{ 'false' if alertmanager_direct_download else 'true' }}"
+  get_url:
+    url: "{{ alertmanager_release_download_url }}/download/v{{ __alertmanager_files.archive }}"
+    dest: "{{ alertmanager_local_tmp_directory }}/alertmanager.linux-{{ go_arch }}.tar.gz"
+    checksum: "sha256:{{ __alertmanager_checksum }}"
+  register: _download_archive
+  until: _download_archive is succeeded
+  retries: 5
+  delay: 2
+  check_mode: false
+
+- name: extract prometheus archive
+  become: false
+  delegate_to: "{{ alertmanager_delegate_to }}"
+  run_once: "{{ 'false' if alertmanager_direct_download else 'true' }}"
+  unarchive:
+    src: "{{ alertmanager_local_tmp_directory }}/alertmanager.linux-{{ go_arch }}.tar.gz"
+    dest: "{{ alertmanager_local_tmp_directory }}"
+    copy: false
+  register: _extract_archive
+
+...

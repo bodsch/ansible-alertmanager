@@ -1,0 +1,91 @@
+---
+
+alertmanager_service:
+  log:
+    level: debug
+    format: ""
+  web:
+    listen_address: '127.0.0.1:9093'
+    external_url: 'http://molecule.docker.local'
+
+alertmanager_receivers:
+  - name: blackhole
+  # - name: slack
+  #   slack_configs:
+  #     - channel: '#arri-dev-alerts'
+  #       api_url: "{{ vault__alertmanager_slack.QA }}"
+  #       send_resolved: false
+  #       title: |-
+  #         {% raw %}
+  #         [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+  #         {% endraw %}
+  #
+  #       text: >-
+  #         {% raw %}
+  #         {{ range .Alerts -}}
+  #         *Alert:*  {{ if .Labels.severity }} - `{{ .Labels.severity }}`: {{ end }}{{ .Annotations.summary }}
+  #
+  #         *Description:* {{ .Annotations.description }}
+  #
+  #         *Details:*
+  #           {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+  #           {{ end }}
+  #         {{ end }}
+  #         {% endraw %}
+
+alertmanager_route:
+  group_by:
+    - 'alertname'
+    - 'service'
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: blackhole
+
+  routes:
+    # capture all 'test' severity
+    - match:
+        severity: test
+      receiver: blackhole
+
+
+    # capture 'critical' severity
+    - match:
+        severity: critical
+      receiver: slack
+
+      routes:
+        # forward DEV to 'blackhole'
+        - match:
+            environment: DEV
+          receiver: blackhole
+
+        # forward OPS to 'slack_qa'
+        - match:
+            environment: OPS
+          receiver: slack_qa
+
+        # forward QA to 'slack_qa'
+        - match:
+            environment: QA
+          receiver: slack_qa
+
+        # forward PROD to 'slack' -> arri_smtp -> opsgenie
+        - match:
+            environment: PROD
+          receiver: slack
+          continue: true
+        - match:
+            environment: PROD
+          receiver: arri_smtp
+          continue: true
+        - match:
+            environment: PROD
+          receiver: opsgenie
+
+    # - match:
+    #     alertname: QuietHours
+    #   receiver: blackhole
+
+
+...

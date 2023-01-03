@@ -1,0 +1,135 @@
+---
+
+alertmanager_main_version: "{{ alertmanager_version[0:3] }}"
+
+alertmanager_install_path: /usr/local/bin/alertmanager/{{ alertmanager_version }}
+
+alertmanager_delegate_to: localhost
+
+alertmanager_local_tmp_directory: "{{
+  lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+  default(lookup('env', 'HOME') ~ '/.cache/ansible/alertmanager', true) }}/{{ alertmanager_version }}"
+
+alertmanager_requirements:
+  - iproute2
+  - gzip
+  - python3-jinja2
+
+alertmanager_defaults_amtool:
+  config_dir: /etc/amtool
+  # Location (URL) of the alertmanager
+  alertmanager_url: "{{ alertmanager_service.web.external_url }}"
+  # Extended output of `amtool` commands, use '' for less verbosity
+  output: extended
+
+alertmanager_defaults_service:
+  log:
+    level: info
+    format: ""
+  storage:
+    path: /var/lib/alertmanager
+  data:
+    retention: 120h
+    maintenance_interval: 15m
+  web:
+    # [EXPERIMENTAL]
+    # Path to configuration file that can enable TLS or authentication.
+    config:
+      file: ""
+    # The URL under which Alertmanager is externally reachable (for example, if Alertmanager is served via a reverse proxy). Used for generating relative and
+    #    #                                 absolute links back to Alertmanager itself. If the URL has a path portion, it will be used to prefix all HTTP endpoints served by Alertmanager. If omitted,
+    #    #                                 relevant URL components will be derived automatically.
+    external_url: ""
+    # Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
+    listen_address: "0.0.0.0:9093"
+    # Prefix for the internal routes of web endpoints. Defaults to path of --web.external-url.
+    route_prefix: ""
+    # Maximum number of GET requests processed concurrently. If negative or zero, the limit is GOMAXPROC or 8, whichever is larger.
+    get_concurrency: 0
+    # Timeout for HTTP requests. If negative or zero, no timeout is set.
+    timeout: ""
+    # Use systemd socket activation listeners instead of port listeners (Linux only).
+    systemd_socket: false
+
+  raw_flags: {}
+
+alertmanager_defaults_global:
+  smtp:
+    # The default SMTP From header field.
+    from: ""
+    # The default SMTP smarthost used for sending emails, including port number.
+    # Port number usually is 25, or 587 for SMTP over TLS (sometimes referred to as STARTTLS).
+    # Example: smtp.example.org:587
+    smarthost: ""
+    # The default hostname to identify to the SMTP server.
+    hello: "localhost"
+    # SMTP Auth using CRAM-MD5, LOGIN and PLAIN. If empty, Alertmanager doesn't authenticate to the SMTP server.
+    auth:
+      username: ""
+      # SMTP Auth using LOGIN and PLAIN.
+      password: ""
+      # SMTP Auth using LOGIN and PLAIN.
+      password_file: ""
+      # SMTP Auth using PLAIN.
+      identity: ""
+      # SMTP Auth using CRAM-MD5.
+      secret: ""
+    # The default SMTP TLS requirement.
+    # Note that Go does not support unencrypted connections to remote SMTP endpoints.
+    require_tls: true
+  slack:
+    # The API URL to use for Slack notifications.
+    api_url: ""
+    api_url_file: ""
+  victorops:
+    api_key: ""
+    api_key_file: ""
+    # default = "https://alert.victorops.com/integrations/generic/20131114/alert/" ]
+    api_url: ""
+  pagerduty:
+    # default = "https://events.pagerduty.com/v2/enqueue"
+    url: ""
+  opsgenie:
+    api_key: ""
+    api_key_file: ""
+    # default = "https://api.opsgenie.com/"
+    api_url: ""
+  wechat:
+    # default = "https://qyapi.weixin.qq.com/cgi-bin/"
+    api_url: ""
+    api_secret: ""
+    api_corp_id: ""
+  telegram:
+    # default = "https://api.telegram.org"
+    api_url: ""
+  webex:
+    # default = "https://webexapis.com/v1/messages"
+    api_url: ""
+  # The default HTTP client configuration
+  http_config: ""
+  resolve_timeout: 5m
+
+alertmanager_defaults_receivers: []
+alertmanager_defaults_routes: {}
+alertmanager_defaults_inhibit_rules: {}
+alertmanager_defaults_time_intervals: {}
+
+
+alertmanager_defaults_directory: /etc/default
+
+__alertmanager_files:
+  archive: "v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}.tar.gz"
+  checksum: "v{{ alertmanager_version }}/sha256sums.txt"
+  binary: "alertmanager-{{ alertmanager_version }}.linux-{{ go_arch }}.tar.gz"
+
+go_arch_map:
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'
+
+go_arch: "{{ go_arch_map[ansible_architecture] | default(ansible_architecture) }}"
+
+systemd_lib_directory: /lib/systemd/system
+
+...

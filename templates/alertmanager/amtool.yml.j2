@@ -1,0 +1,9 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+---
+# {{ ansible_managed }}
+
+alertmanager.url: "{{ alertmanager_amtool.alertmanager_url }}"
+{% if alertmanager_amtool.output is defined and
+      alertmanager_amtool.output | string | length > 0 %}
+output: "{{ alertmanager_amtool.output }}"
+{% endif %}

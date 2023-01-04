@@ -18,6 +18,8 @@
       check-config \
       --verbose \
       {{ alertmanager_config_dir }}/alertmanager.yml
+  notify:
+    - restart alertmanager
 
 - name: daemon-reload
   become: true

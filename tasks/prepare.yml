@@ -156,7 +156,7 @@
   ansible.builtin.set_fact:
     alertmanager_service: "{{ alertmanager_defaults_service | combine(alertmanager_service, recursive=True) }}"
     alertmanager_global: "{{ alertmanager_defaults_global | combine(alertmanager_global, recursive=True) }}"
-    # alertmanager_receivers: "{{ alertmanager_defaults_receivers | union(alertmanager_receivers) }}"
+    alertmanager_receivers: "{{ alertmanager_defaults_receivers | combine(alertmanager_receivers, recursive=True) }}"
     alertmanager_routes: "{{ alertmanager_defaults_routes | combine(alertmanager_routes, recursive=True) }}"
     # alertmanager_inhibit_rules: "{{ alertmanager_defaults_inhibit_rules | union(alertmanager_inhibit_rules) }}"
     alertmanager_time_intervals: "{{ alertmanager_defaults_time_intervals | combine(alertmanager_time_intervals, recursive=True) }}"
@@ -164,42 +164,5 @@
 - name: merge amtool configuration between defaults and custom
   ansible.builtin.set_fact:
     alertmanager_amtool: "{{ alertmanager_defaults_amtool | combine(alertmanager_amtool, recursive=True) }}"
-
-# -----------
-
-# - name: validate file_sd config in alertmanager_scrape_configs
-#   set_fact:
-#     missing_target_definition: "{{ alertmanager_scrape_configs | validate_file_sd(alertmanager_file_sd_targets) }}"
-#
-# - name: Fail when file_sd targets are not defined in alertmanager_scrape_configs
-#   fail:
-#     msg: "For the following files a definition in alertmanager_file_sd_targets is missing:\n
-#       {{ missing_target_definition | join('\n') }}"
-#   when:
-#     - missing_target_definition is defined
-#     - missing_target_definition | count > 0
-#
-# - name: alertmanager endpoints
-#   block:
-#     - name: validate alertmanager configs
-#       set_fact:
-#         validated_endpoints: "{{ alertmanager_alerting.alertmanagers | validate_alertmanager_endpoints }}"
-#
-#     - name: Fail when the endpoints not present or not supported
-#       fail:
-#         msg: "The Alertmanager endpoint ar not valid!\nPlease check your config!\n
-#              Currently supported endpoints are:\n
-#               - {{ validated_endpoints[2] | join('\n - ') }}\n
-#              found endpoints:\n
-#               - {{ validated_endpoints[1] | default(['']) | join('\n - ') }}\n"
-#       when:
-#         - validated_endpoints is defined
-#         - validated_endpoints[0] is defined
-#         - not validated_endpoints[0]
-#
-#   when:
-#     - alertmanager_alerting is defined
-#     - alertmanager_alerting.alertmanagers is defined
-#     - alertmanager_alerting.alertmanagers | count > 0
 
 ...

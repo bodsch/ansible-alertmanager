@@ -19,7 +19,6 @@
     mode: 0640
   notify:
     - validate config
-    - reload alertmanager
 
 - name: restart alertmanager if needed
   ansible.builtin.meta: flush_handlers

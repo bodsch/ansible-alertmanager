@@ -1,37 +1,181 @@
-
-# The root route on which each incoming alert enters.
 {# https://prometheus.io/docs/alerting/latest/configuration/#route #}
-route:
-  # The labels by which incoming alerts are grouped together. For example,
-  # multiple alerts coming in for cluster=A and alertname=LatencyHigh would
-  # be batched into a single group.
-  #
-  # To aggregate by all possible labels use '...' as the sole label name.
-  # This effectively disables aggregation entirely, passing through all
-  # alerts as-is. This is unlikely to be what you want, unless you have
-  # a very low alert volume or your upstream notification system performs
-  # its own grouping. Example: group_by: [...]
+
+{% macro alertmanager_routes(data, indent = 6) %}
+  {% set _keys = data | sort %}
+  {% if "description" in _keys %}
+# description: {{ data["description"].strip() }}
+    {% set _ = _keys.remove("description") %}
+  {% endif %}
+  {% set _receiver = data.get('receiver', None) %}
+  {% set _match = data.get('match', None) %}
+  {% set _match_re = data.get('match_re', None) %}
+  {% set _matchers = data.get('matchers', []) %}
+  {% set _group_by = data.get('group_by', []) %}
+  {% set _group_wait = data.get('group_wait', None) %}
+  {% set _group_interval = data.get('group_interval', None) %}
+  {% set _repeat_interval = data.get('repeat_interval', None) %}
+  {% set _mute_time_intervals = data.get('mute_time_intervals', None) %}
+  {% set _active_time_intervals = data.get('active_time_intervals', None) %}
+  {% set _continue = data.get('continue', None) %}
+  {% set _sub_route = data.get('routes', {}) %}
+  {% if _receiver is defined %}
+- receiver: {{ _receiver }}
+    {% if _match is defined and _match is not none %}
+  # DEPRECATED: Use matchers
+  match:
+    {{ _match | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _match_re is defined and _match_re is not none %}
+  # DEPRECATED: Use matchers
+  match_re:
+    {{ _match_re | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _matchers is defined and _matchers | count > 0 %}
+      {# _matchers must be an list! #}
+  matchers:
+    {{ _matchers | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _group_by is defined and _group_by | count > 0 %}
   group_by:
-    - 'alertname'
-    - 'cluster'
-    - 'service'
-
-  # When a new group of alerts is created by an incoming alert, wait at
-  # least 'group_wait' to send the initial notification.
-  # This way ensures that you get multiple alerts for the same group that start
-  # firing shortly after another are batched together on the first
-  # notification.
-  group_wait: 30s
-
-  # When the first notification was sent, wait 'group_interval' to send a batch
-  # of new alerts that started firing for that group.
-  group_interval: 5m
-
-  # If an alert has successfully been sent, wait 'repeat_interval' to
-  # resend them.
-  repeat_interval: 3h
-
-  # A default receiver
-  receiver: "blackhole"
-
+    {{ _group_by | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _group_wait is defined and _group_wait is not none %}
+  group_wait: {{ _group_wait }}
+    {% endif %}
+    {% if _group_interval is defined and _group_interval is not none %}
+  group_interval: {{ _group_interval }}
+    {% endif %}
+    {% if _repeat_interval is defined and _repeat_interval is not none %}
+  repeat_interval: {{ _repeat_interval }}
+    {% endif %}
+    {% if _mute_time_intervals is defined and _mute_time_intervals is not none %}
+  mute_time_intervals:
+    {{ _mute_time_intervals | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _active_time_intervals is defined and _active_time_intervals is not none %}
+  active_time_intervals:
+    {{ _active_time_intervals | to_nice_yaml(indent=indent, sort_keys=False) | indent(width=indent, first=False, blank=False) }}
+    {% endif %}
+    {% if _continue is defined and _continue is not none  %}
+  continue: {{ _continue |bool | ternary('true', 'false') }}
+    {% endif %}
+    {% if _sub_route is defined and _sub_route | count > 0 %}
+  routes:
+      {% for r in _sub_route %}
+    {{ alertmanager_routes(r,indent-2) | indent(width=indent-2, first=False, blank=False) }}
+      {%- endfor -%}
+    {% endif %}
+  {% endif %}
+{% endmacro %}
+# The root route on which each incoming alert enters.
+route:
+  {% if alertmanager_route.group_by is defined and
+        alertmanager_route.group_by | count > 0 %}
+  group_by:
+    {{ alertmanager_route.group_by | to_nice_yaml(indent=4, sort_keys=False) | indent(width=4, first=False, blank=False) }}
+  {% endif %}
+  {% if alertmanager_route.continue is defined %}
+  continue: {{ alertmanager_route.continue | bool | ternary('true', 'false') }}
+  {% endif %}
+    {% if alertmanager_route.group_wait is defined and
+        alertmanager_route.group_wait | string | length > 0 %}
+  group_wait: {{ alertmanager_route.group_wait }}
+  {% endif %}
+  {% if alertmanager_route.group_interval is defined and
+        alertmanager_route.group_interval | string | length > 0 %}
+  group_interval: {{ alertmanager_route.group_interval }}
+  {% endif %}
+  {% if alertmanager_route.repeat_interval is defined and
+        alertmanager_route.repeat_interval | string | length > 0 %}
+  repeat_interval: {{ alertmanager_route.repeat_interval }}
+  {% endif %}
+  {% if alertmanager_route.default_receiver is defined and
+        alertmanager_route.default_receiver | string | length > 0 %}
+  receiver: {{ alertmanager_route.default_receiver }}
+  {% endif %}
+  {% if alertmanager_route.mute_time_intervals is defined and
+        alertmanager_route.mute_time_intervals | string | length > 0 %}
+  mute_time_intervals: {{ alertmanager_route.mute_time_intervals }}
+  {% endif %}
+  {% if alertmanager_route.active_time_intervals is defined and
+        alertmanager_route.active_time_intervals | string | length > 0 %}
+  active_time_intervals: {{ alertmanager_route.active_time_intervals }}
+  {% endif %}
+  {% if alertmanager_route.routes is defined and
+        alertmanager_route.routes | count > 0 %}
+    {% set alert_routes = alertmanager_route.routes %}
+  routes:
+    {% for r in alert_routes %}
+    {{ alertmanager_routes(r) | indent(width=4, first=False, blank=False) }}
+    {%- endfor -%}
+  {% else %}
   routes: []
+  {% endif -%}
+{#
+[ receiver: <string> ]
+# The labels by which incoming alerts are grouped together. For example,
+# multiple alerts coming in for cluster=A and alertname=LatencyHigh would
+# be batched into a single group.
+#
+# To aggregate by all possible labels use the special value '...' as the sole label name, for example:
+# group_by: ['...']
+# This effectively disables aggregation entirely, passing through all
+# alerts as-is. This is unlikely to be what you want, unless you have
+# a very low alert volume or your upstream notification system performs
+# its own grouping.
+[ group_by: '[' <labelname>, ... ']' ]
+
+# Whether an alert should continue matching subsequent sibling nodes.
+[ continue: <boolean> | default = false ]
+
+# DEPRECATED: Use matchers below.
+# A set of equality matchers an alert has to fulfill to match the node.
+match:
+  [ <labelname>: <labelvalue>, ... ]
+
+# DEPRECATED: Use matchers below.
+# A set of regex-matchers an alert has to fulfill to match the node.
+match_re:
+  [ <labelname>: <regex>, ... ]
+
+# A list of matchers that an alert has to fulfill to match the node.
+matchers:
+  [ - <matcher> ... ]
+
+# How long to initially wait to send a notification for a group
+# of alerts. Allows to wait for an inhibiting alert to arrive or collect
+# more initial alerts for the same group. (Usually ~0s to few minutes.)
+[ group_wait: <duration> | default = 30s ]
+
+# How long to wait before sending a notification about new alerts that
+# are added to a group of alerts for which an initial notification has
+# already been sent. (Usually ~5m or more.)
+[ group_interval: <duration> | default = 5m ]
+
+# How long to wait before sending a notification again if it has already
+# been sent successfully for an alert. (Usually ~3h or more).
+[ repeat_interval: <duration> | default = 4h ]
+
+# Times when the route should be muted. These must match the name of a
+# mute time interval defined in the mute_time_intervals section.
+# Additionally, the root node cannot have any mute times.
+# When a route is muted it will not send any notifications, but
+# otherwise acts normally (including ending the route-matching process
+# if the `continue` option is not set.)
+mute_time_intervals:
+  [ - <string> ...]
+
+# Times when the route should be active. These must match the name of a
+# time interval defined in the time_intervals section. An empty value
+# means that the route is always active.
+# Additionally, the root node cannot have any active times.
+# The route will send notifications only when active, but otherwise
+# acts normally (including ending the route-matching process
+# if the `continue` option is not set).
+active_time_intervals:
+  [ - <string> ...]
+
+# Zero or more child routes.
+routes:
+  [ - <route> ... ]
+#}

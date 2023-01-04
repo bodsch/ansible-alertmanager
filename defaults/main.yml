@@ -17,10 +17,12 @@ alertmanager_amtool: {}
 
 alertmanager_service: {}
 alertmanager_global: {}
+alertmanager_templates:
+  - '{{ alertmanager_config_dir }}/templates/*.tmpl'
 
 alertmanager_receivers: []
 alertmanager_routes: {}
-alertmanager_inhibit_rules: {}
+alertmanager_inhibit_rules: []
 alertmanager_time_intervals: {}
 
 ...

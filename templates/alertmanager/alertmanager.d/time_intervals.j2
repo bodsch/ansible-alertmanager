@@ -4,5 +4,12 @@
 # A list of time intervals for muting/activating routes.
 {# https://prometheus.io/docs/alerting/latest/configuration/#time_interval-0 #}
 time_intervals:
-{{ alertmanager_time_intervals | to_nice_yaml(indent=2) }}
+  {% for name, values in alertmanager_time_intervals.items() %}
+    {% if values.get("description") %}
+  # {{ values.get("description").strip() }}
+      {% set _ = values.pop("description") %}
+    {% endif %}
+  - name: {{ name }}
+    {{ values | to_nice_yaml(indent=2, sort_keys=False) | indent(width=6, first=False, blank=False) }}
+  {% endfor %}
 {% endif %}

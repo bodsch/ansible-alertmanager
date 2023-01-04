@@ -3,10 +3,7 @@
 from __future__ import (absolute_import, print_function)
 __metaclass__ = type
 
-import os
 import re
-import json
-import base64
 
 from ansible.utils.display import Display
 
@@ -21,9 +18,8 @@ class FilterModule(object):
     def filters(self):
         return {
             'alertmanager_checksum': self.checksum,
-            'remove_empty_elements': self.remove_empty_elements,
-            'jinja_encode': self.jinja_encode,
         }
+
     def checksum(self, data, os, arch):
         """
         """
@@ -44,33 +40,3 @@ class FilterModule(object):
         display.v(f"= checksum: {checksum}")
 
         return checksum
-
-    def remove_empty_elements(self, data):
-        """
-        """
-        data_copy = data.copy()
-
-        if isinstance(data_copy, dict):
-            """
-            """
-            result = {k: v for k, v in data_copy.items() if v}
-
-            display.v(f"= result: {result}")
-
-            return result
-
-    def jinja_encode(self, data):
-        """
-        """
-        # display.v(f"jinja_encode({data})")
-        if isinstance(data, dict):
-            data = json.dumps(data, sort_keys=True).encode('utf-8')
-        elif isinstance(data, list):
-            data = json.dumps(data, sort_keys=True).encode('utf-8')
-        else:
-            data = data.encode('utf-8')
-
-        result = base64.b64encode(data).decode('utf-8')
-        # display.v(f"= result: {result}")
-
-        return result

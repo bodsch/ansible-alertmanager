@@ -1,34 +1,17 @@
-
-# A list of notification receivers.
 {% if alertmanager_receivers is defined and
       alertmanager_receivers | count > 0 %}
+
+# A list of notification receivers.
 receivers:
-{{ alertmanager_receivers | to_nice_yaml(indent=2) }}
+  {% for name, values  in alertmanager_receivers.items() %}
+  - name: {{ name }}
+    {% if values | count > 0 %}
+    {{ values | to_nice_yaml(indent=2, sort_keys=False) | indent(width=6, first=False, blank=False) }}
+    {% else %}
+
+    {% endif %}
+  {% endfor %}
 {% endif %}
-{#
-receivers:
-  - name: 'team-X-mails'
-    email_configs:
-      - to: 'team-X+alerts@example.org'
-
-  - name: 'team-X-pager'
-    email_configs:
-      - to: 'team-X+alerts-critical@example.org'
-    pagerduty_configs:
-      - service_key: <team-X-key>
-
-  - name: 'team-Y-mails'
-    email_configs:
-      - to: 'team-Y+alerts@example.org'
-
-  - name: 'team-Y-pager'
-    pagerduty_configs:
-      - service_key: <team-Y-key>
-
-  - name: 'team-DB-pager'
-    pagerduty_configs:
-      - service_key: <team-DB-key>
-#}
 {#
 # The unique name of the receiver.
 name: <string>

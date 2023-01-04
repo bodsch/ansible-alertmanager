@@ -2,18 +2,18 @@
 
 - name: restart alertmanager
   become: true
-  service:
+  ansible.builtin.service:
     name: alertmanager
     state: restarted
 
 - name: reload alertmanager
   become: true
-  service:
+  ansible.builtin.service:
     name: alertmanager
     state: reloaded
 
 - name: validate config
-  command: |
+  ansible.builtin.command: |
     /usr/bin/amtool \
       check-config \
       --verbose \
@@ -21,7 +21,7 @@
 
 - name: daemon-reload
   become: true
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
     force: true
   when:

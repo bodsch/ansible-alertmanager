@@ -1,31 +1,16 @@
 ---
 
-- name: create alertmanager configuration directory
-  file:
-    path: "{{ alertmanager_config_dir }}"
-    state: directory
-    owner: root
-    group: "{{ alertmanager_system_group }}"
-    mode: 0770
-
-- name: create amtool configuration directory
-  file:
-    path: "{{ alertmanager_amtool.config_dir }}"
-    state: directory
-    owner: root
-    group: "{{ alertmanager_system_group }}"
-    mode: 0770
-
 - name: create amtool config
-  template:
+  ansible.builtin.template:
     force: true
     src: alertmanager/amtool.yml.j2
     dest: "{{ alertmanager_amtool.config_dir }}/config.yml"
     owner: alertmanager
     group: "{{ alertmanager_system_group }}"
     mode: 0640
+
 - name: create alertmanager.yml
-  template:
+  ansible.builtin.template:
     force: true
     src: alertmanager/alertmanager.yml.j2
     dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
@@ -36,69 +21,7 @@
     - validate config
     - reload alertmanager
 
-# - name: create (experimental) alertmanager web configuration
-#   template:
-#     src: alertmanager/web.yml.j2
-#     dest: "{{ alertmanager_config_dir }}/web.yml"
-#     force: true
-#     owner: root
-#     group: "{{ alertmanager_system_group }}"
-#     mode: 0640
-#   when:
-#     - alertmanager_enable_experimental
-#   notify:
-#     - reload alertmanager
-
-# - name: create static targets
-#   template:
-#     src: alertmanager/file_sd/item.yml.j2
-#     dest: "{{ alertmanager_config_dir }}/file_sd/{{ item.key }}.yml"
-#     force: true
-#     owner: root
-#     group: "{{ alertmanager_system_group }}"
-#     mode: 0640
-#   with_dict: "{{ alertmanager_file_sd_targets }}"
-#   loop_control:
-#     label: "{{ item.key }}.yml"
-#   when:
-#     - alertmanager_file_sd_targets is defined
-#     - alertmanager_file_sd_targets | count > 0
-#   notify:
-#     - validate config
-#     - reload alertmanager
-#
-# - name: create alerting rules
-#   alertmanager_alert_rules:
-#     rules: "{{ alertmanager_alert_rules | jinja_encode }}"
-#     group: "{{ alertmanager_system_group }}"
-#   when:
-#     - alertmanager_alert_rules is defined
-#     - alertmanager_alert_rules | count > 0
-#   notify:
-#     - validate config
-#     - reload alertmanager
-
-# - name: create alerting rules
-#   alertmanager_alert_rule:
-#     state: "{{ item.value.state | default('present') }}"
-#     name: "{{ item.key }}"
-#     alert: "{{ item.value.alert }}"
-#     for_clause: "{{ item.value.for }}"
-#     expression: "{{ item.value.expr }}"
-#     labels: "{{ item.value.labels }}"
-#     annotations: "{{ item.value.annotations | default({}) }}"
-#     # validate: "{{ alertmanager_install_path }}/promtool check rules %s"
-#   loop: "{{ alertmanager_alert_rules | dict2items }}"
-#   loop_control:
-#     label: "{{ item.key }}"
-#   notify:
-#     - validate config
-#     - reload alertmanager
-#   when:
-#     - alertmanager_alert_rules is defined
-#     - alertmanager_alert_rules | count > 0
-
 - name: restart alertmanager if needed
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 ...

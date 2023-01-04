@@ -1,7 +1,66 @@
 {% if alertmanager_inhibit_rules is defined and
       alertmanager_inhibit_rules | count > 0 %}
-
 # A list of inhibition rules.
+{#
+  Inhibit rules define which alerts triggered by Prometheus shouldn't be forwarded to the notification integrations.
+  For example the Watchdog alert is meant to test that everything works as expected, but is not meant to be used by
+  the users.
+  Similarly, if you are using EKS, you'll probably have an KubeVersionMismatch, because Kubernetes allows a certain
+  version skew between their components. So the alert is more strict than the Kubernetes policy.
+#}
+{# https://lyz-code.github.io/blue-book/devops/prometheus/alertmanager/#inhibit-rules #}
 inhibit_rules:
-{{ alertmanager_inhibit_rules | to_nice_yaml(indent=2) }}
+  {% for rule in alertmanager_inhibit_rules %}
+    {% set _keys = rule | sort(reverse=True) %}
+    {% if "description" in _keys %}
+  # {{ rule["description"].strip() }}
+    {% set _ = _keys.remove("description") %}
+    {% endif %}
+    {% for k in _keys %}
+      {% set _rules_vales = rule[k] %}
+      {% if loop.index == 1 %}
+  - {{ k }}:
+      {% else %}
+    {{ k }}:
+      {% endif %}
+      {{ _rules_vales | to_nice_yaml(indent=6, sort_keys=False) | indent(width=6, first=False, blank=False) -}}
+    {% endfor %}
+  {% endfor %}
 {% endif %}
+
+{#
+# DEPRECATED: Use target_matchers below.
+# Matchers that have to be fulfilled in the alerts to be muted.
+target_match:
+  [ <labelname>: <labelvalue>, ... ]
+# DEPRECATED: Use target_matchers below.
+target_match_re:
+  [ <labelname>: <regex>, ... ]
+
+# A list of matchers that have to be fulfilled by the target
+# alerts to be muted.
+target_matchers:
+  - matchers:
+    - alertname = Watchdog
+    - severity =~ "warning|critical"
+
+# DEPRECATED: Use source_matchers below.
+# Matchers for which one or more alerts have to exist for the
+# inhibition to take effect.
+source_match:
+  [ <labelname>: <labelvalue>, ... ]
+# DEPRECATED: Use source_matchers below.
+source_match_re:
+  [ <labelname>: <regex>, ... ]
+
+# A list of matchers for which one or more alerts have
+# to exist for the inhibition to take effect.
+source_matchers:
+  - matchers:
+    - foo = bar
+    - dings !=bums
+
+# Labels that must have an equal value in the source and target
+# alert for the inhibition to take effect.
+[ equal: '[' <labelname>, ... ']' ]
+#}

@@ -1,7 +1,7 @@
 ---
 
 - name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
-  include_vars: "{{ lookup('first_found', params) }}"
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
       paths:
@@ -21,11 +21,11 @@
       skip: true
 
 - name: update package cache
-  package:
+  ansible.builtin.package:
     update_cache: true
 
 - name: define delegate instance for download handling
-  set_fact:
+  ansible.builtin.set_fact:
     alertmanager_delegate_to: "{{ ansible_host }}"
     alertmanager_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
@@ -34,7 +34,7 @@
     - alertmanager_direct_download
 
 - name: install dependency
-  package:
+  ansible.builtin.package:
     name: "{{ alertmanager_requirements }}"
     state: present
   when:
@@ -48,7 +48,7 @@
       delegate_to: localhost
       become: false
       run_once: true
-      uri:
+      ansible.builtin.uri:
         url: "https://api.github.com/repos/prometheus/alertmanager/releases/latest"
         method: GET
         return_content: true
@@ -63,11 +63,11 @@
       retries: 5
 
     - name: re-define alertmanager_version
-      set_fact:
+      ansible.builtin.set_fact:
         alertmanager_version: "{{ _latest_release.json.tag_name[1:] }}"
 
 - name: detect our installation path '{{ alertmanager_install_path | dirname }}'
-  stat:
+  ansible.builtin.stat:
     path: "{{ alertmanager_install_path | dirname }}"
     get_checksum: false
   register: stat_alertmanager_path
@@ -81,7 +81,7 @@
     - not stat_alertmanager_path.stat.isdir
   block:
     - name: stop old service
-      service:
+      ansible.builtin.service:
         name: prometheus
         state: stopped
         enabled: false
@@ -89,45 +89,45 @@
         - daemon-reload
 
     - name: remove installed systemd unit
-      file:
+      ansible.builtin.file:
         state: absent
         path: /etc/systemd/system/alertmanager.service
       when:
         - ansible_service_mgr | lower == "systemd"
 
     - name: remove installed alertmanager
-      file:
+      ansible.builtin.file:
         state: absent
         path: "{{ stat_alertmanager_path.stat.path }}"
 
 - name: flush handlers
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: detect installed alertmanager binary
-  stat:
+  ansible.builtin.stat:
     path: "{{ alertmanager_install_path }}/alertmanager"
   register: stat_alertmanager_binary
 
 - name: create download directory
   become: false
   delegate_to: "{{ alertmanager_delegate_to }}"
-  file:
+  ansible.builtin.file:
     path: "{{ alertmanager_local_tmp_directory }}"
     state: directory
     mode: 0750
 
 - name: user and group handling
-    - alertmanager_system_user != "root"
   when:
+    - alertmanager_system_user != "root"
   block:
     - name: create alertmanager group
-      group:
+      ansible.builtin.group:
         name: "{{ alertmanager_system_group }}"
         state: present
         system: true
 
     - name: create alertmanager user
-      user:
+      ansible.builtin.user:
         name: "{{ alertmanager_system_user }}"
         groups: "{{ alertmanager_system_group }}"
         append: true
@@ -137,7 +137,7 @@
         home: /nonexistent
 
 - name: create install directory
-  file:
+  ansible.builtin.file:
     path: "{{ alertmanager_install_path }}"
     state: directory
     owner: "{{ alertmanager_system_user }}"
@@ -145,7 +145,7 @@
     mode: 0755
 
 - name: create ansible local facts directory
-  file:
+  ansible.builtin.file:
     dest: /etc/ansible/facts.d
     state: directory
     owner: root
@@ -153,16 +153,16 @@
     mode: 0775
 
 - name: merge alertmanager configuration between defaults and custom
-  set_fact:
+  ansible.builtin.set_fact:
     alertmanager_service: "{{ alertmanager_defaults_service | combine(alertmanager_service, recursive=True) }}"
     alertmanager_global: "{{ alertmanager_defaults_global | combine(alertmanager_global, recursive=True) }}"
     # alertmanager_receivers: "{{ alertmanager_defaults_receivers | union(alertmanager_receivers) }}"
     alertmanager_routes: "{{ alertmanager_defaults_routes | combine(alertmanager_routes, recursive=True) }}"
-    alertmanager_inhibit_rules: "{{ alertmanager_defaults_inhibit_rules | combine(alertmanager_inhibit_rules, recursive=True) }}"
+    # alertmanager_inhibit_rules: "{{ alertmanager_defaults_inhibit_rules | union(alertmanager_inhibit_rules) }}"
     alertmanager_time_intervals: "{{ alertmanager_defaults_time_intervals | combine(alertmanager_time_intervals, recursive=True) }}"
 
 - name: merge amtool configuration between defaults and custom
-  set_fact:
+  ansible.builtin.set_fact:
     alertmanager_amtool: "{{ alertmanager_defaults_amtool | combine(alertmanager_amtool, recursive=True) }}"
 
 # -----------

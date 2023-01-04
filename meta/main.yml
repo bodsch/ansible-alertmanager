@@ -1,37 +1,31 @@
 ---
 
 galaxy_info:
-  role_name: prometheus
+  role_name: alertmanager
   namespace: bodsch
 
   author: Bodo Schulz
-  description: ansible role to setup prometheus
+  description: ansible role to setup alertmanager
   license: Apache
-  min_ansible_version: 2.9
+  min_ansible_version: "2.10"
 
   platforms:
-    - name: EL
-      versions:
-        - 8
-    - name: Ubuntu
-      versions:
-        # 20.04
-        - focal
+    - name: ArchLinux
     - name: Debian
       versions:
         # 10
         - buster
         # 11
         - bullseye
-    - name: ArchLinux
+    - name: Ubuntu
+      versions:
+        # 20.04
+        - focal
 
   galaxy_tags:
     - prometheus
-    - collector
+    - alertmanager
     - monitoring
-    - metrics
-    - system
-    - prometheus
 
 dependencies: []
 

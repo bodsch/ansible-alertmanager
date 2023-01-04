@@ -104,11 +104,11 @@ def local_facts(host):
     """
       return local facts
     """
-    return host.ansible("setup").get("ansible_facts").get("ansible_local").get("prometheus")
+    return host.ansible("setup").get("ansible_facts").get("ansible_local").get("alertmanager")
 
 
 @pytest.mark.parametrize("dirs", [
-    "/etc/prometheus",
+    "/etc/alertmanager",
 ])
 def test_directories(host, dirs):
     d = host.file(dirs)
@@ -135,20 +135,20 @@ def test_files(host, get_vars):
         install_dir = install_dir.replace('latest', version)
 
     files = []
-    files.append("/usr/bin/prometheus")
+    files.append("/usr/bin/alertmanager")
 
     if install_dir:
-        files.append(f"{install_dir}/prometheus")
+        files.append(f"{install_dir}/alertmanager")
     if defaults_dir and not distribution == "artix":
-        files.append(f"{defaults_dir}/prometheus")
+        files.append(f"{defaults_dir}/alertmanager")
     if config_dir:
-        files.append(f"{config_dir}/prometheus.yml")
-        files.append(f"{config_dir}/rules/ops.rules")
-        files.append(f"{config_dir}/rules/prometheus.rules")
-
-        files.append(f"{config_dir}/file_sd/kresd.yml")
-        files.append(f"{config_dir}/file_sd/node.yml")
-        files.append(f"{config_dir}/file_sd/sensors.yml")
+        files.append(f"{config_dir}/alertmanager.yml")
+        # files.append(f"{config_dir}/rules/ops.rules")
+        # files.append(f"{config_dir}/rules/alertmanager.rules")
+        #
+        # files.append(f"{config_dir}/file_sd/kresd.yml")
+        # files.append(f"{config_dir}/file_sd/node.yml")
+        # files.append(f"{config_dir}/file_sd/sensors.yml")
 
     print(files)
 
@@ -161,8 +161,8 @@ def test_files(host, get_vars):
 def test_user(host, get_vars):
     """
     """
-    user = get_vars.get("alertmanager_system_user", "prometheus")
-    group = get_vars.get("alertmanager_system_group", "prometheus")
+    user = get_vars.get("alertmanager_system_user", "alertmanager")
+    group = get_vars.get("alertmanager_system_group", "alertmanager")
 
     assert host.group(group).exists
     assert host.user(user).exists
@@ -171,7 +171,7 @@ def test_user(host, get_vars):
 
 
 def test_service(host, get_vars):
-    service = host.service("prometheus")
+    service = host.service("alertmanager")
     assert service.is_enabled
     assert service.is_running
 
@@ -189,7 +189,7 @@ def test_open_port(host, get_vars):
 
         listen_address = alertmanager_web.get("listen_address")
     else:
-        listen_address = "0.0.0.0:9090"
+        listen_address = "0.0.0.0:9093"
 
     service = host.socket(f"tcp://{listen_address}")
     assert service.is_listening

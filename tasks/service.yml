@@ -3,7 +3,7 @@
 - name: ensure prometheus is enabled on boot
   become: true
   service:
-    name: prometheus
+    name: alertmanager
     enabled: true
     state: started
 

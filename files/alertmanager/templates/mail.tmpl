@@ -1,0 +1,240 @@
+{{ define "custom_mail_subject" }}
+  {{ $length := len .Alerts.Firing }}
+  Alert {{ .Status | toUpper }} ({{ $length }})  {{ if gt $length 1 }}[for {{ range $index, $element := .Alerts.Firing }}{{if $index}}, {{end}}{{ $element.Labels.instance }}{{ end }}]{{ end }}
+{{ end }}
+
+{{ define "custom_mail_html" }}
+
+{{/*  {{ printf "%#v" . }} */}}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="viewport" content="width=device-width">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>{{ template "__subject" . }}</title>
+<style>
+
+@media only screen {
+
+  html {
+    font-family: "courier new", 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.3em;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: none;
+    height: 100%;
+    line-height: 1.6em;
+    background-color: #f6f6f6;
+    width: 100%;"
+  }
+  body {
+    padding: 0 !important;
+  }
+
+  .body-wrap {
+    padding: 10px !important;
+    margin: auto;
+  }
+
+  h1,h2,h3,h4 {
+    font-weight: 800 !important;
+    margin: 20px 0 5px !important;
+  }
+
+  h1 {
+    font-size: 28px !important;
+  }
+
+  h2 {
+    font-size: 24px !important;
+  }
+
+  h3 {
+    font-size: 22px !important;
+  }
+
+  .alert {
+    margin: 0;
+    font-size: 22px;
+    color: #fff;
+    font-weight: 500;
+    padding: 20px;
+    text-align: center;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .alert-warning {
+     background-color: #E6522C !important;
+  }
+
+  .alert-good {
+    background-color: #68B90F !important;
+  }
+
+  .container {
+    padding: 0 !important;
+    width: 100% !important;
+    border: 1px solid;
+  }
+
+  .content {
+    padding: 0 !important;
+    border: 1px;
+    font-size: 20px;
+    min-width: 800px;
+    max-width: 1024px;
+    margin: 0 auto;
+    display: block;
+    padding: 20px;
+  }
+
+  .content-wrap {
+    padding: 10px !important;
+  }
+
+  .invoice {
+    width: 100% !important;
+  }
+
+  .btn-primary {
+    margin: 0 auto;
+    text-decoration: none;
+    color: #FFF;
+    background-color: #348eda !important;
+    border: solid #348eda !important;
+    border-width: 10px 20px;
+    line-height: 2em;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    display: block;
+    border-radius: 5px;
+    text-transform: capitalize;
+  }
+}
+</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/EmailMessage">
+
+  <div class="body-wrap" style="margin: 0; border: 1px;">
+    <div class="content">
+      {{ if gt (len .Alerts.Firing) 0 }}
+      <div class="alert alert-warning">
+        {{ $alertname := (index .Alerts.Firing 0).Labels.alertname }}
+        <strong>{{ $alertname }}</strong>
+{{/*
+          {{ range $index, $element := .Annotations.SortedPairs }}
+            {{ if eq $element.Name "description" }}
+              {{ $element.Value }}
+            {{ end }}
+          {{ end }}
+*/}}
+        <hr/>
+        <div class="content">
+          <a href="{{ template "__alertmanagerURL" . }}" class="btn-primary">View in {{ template "__alertmanager" . }}</a>
+        </div>
+      </div>
+      {{ else }}
+      <div class="alert alert-good">
+        {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
+          {{ .Name }}={{ .Value }}
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+<!--
+    <div class="content">
+      {{ if gt (len .Alerts.Firing) 0 }}
+      <div class="alert alert-warning">
+        {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
+          {{ .Name }}={{ .Value }}
+        {{ end }}
+        <br/>
+        <hr/>
+      </div>
+      {{ else }}
+      <div class="alert alert-good">
+        {{ .Alerts | len }} alert{{ if gt (len .Alerts) 1 }}s{{ end }} for {{ range .GroupLabels.SortedPairs }}
+          {{ .Name }}={{ .Value }}
+        {{ end }}
+      </div>
+      {{ end }}
+    </div>
+
+    <div class="content">
+      <a href="{{ template "__alertmanagerURL" . }}" class="btn-primary">View in {{ template "__alertmanager" . }}</a>
+    </div>
+-->
+    <hr/>
+    <div class="content">
+    {{ range .Alerts.Firing }}
+    {{ range $index, $element := .Annotations.SortedPairs }}
+      {{/* {{ $element.Name }}  */}}
+      {{ if eq $element.Name "description" }}
+        {{ $element.Value }}
+      {{ end }}
+    {{ end }}
+    {{ end }}
+<!--
+      {{ if gt (len .Alerts.Firing) 0 }}
+      <strong>[{{ .Alerts.Firing | len }}] Firing</strong>
+      {{ end }}
+
+      {{ range .Alerts.Firing }}
+      <strong>Labels</strong><br/>
+        {{ range .Labels.SortedPairs }}
+          {{ .Name }} = {{ .Value }}<br/>
+        {{ end }}
+        {{ if gt (len .Annotations) 0 }}
+        <strong>Annotations</strong>
+        <br/>
+        {{ end }}
+        {{ range .Annotations.SortedPairs }}
+          {{ .Name }} = {{ .Value }}<br/>
+        {{ end }}
+      <a href="{{ .GeneratorURL }}" style="margin: 0; color: #348eda; text-decoration: underline;">Source</a>
+      <br/>
+      {{ end }}
+-->
+    </div>
+
+    <div class="content">
+                {{ if gt (len .Alerts.Resolved) 0 }}
+                  {{ if gt (len .Alerts.Firing) 0 }}
+                <div class="content-block" style="margin: 0; padding: 0 0 20px;">
+                  <hr style="margin: 0">
+                </div>
+                  {{ end }}
+                <strong>[{{ .Alerts.Resolved | len }}] Resolved</strong>
+                {{ end }}
+                {{ range .Alerts.Resolved }}
+                <div class="content-block" style="margin: 0; padding: 0 0 20px;">
+                    <strong>Labels</strong>
+                    <br/>
+                    {{ range .Labels.SortedPairs }}
+                      {{ .Name }} = {{ .Value }}<br/>
+                    {{ end }}
+                    {{ if gt (len .Annotations) 0 }}
+                      <strong>Annotations</strong>
+                      <br/>
+                    {{ end }}
+                    {{ range .Annotations.SortedPairs }}
+                      {{ .Name }} = {{ .Value }}<br/>
+                    {{ end }}
+                    <a href="{{ .GeneratorURL }}" style="color: #348eda; text-decoration: underline;">Source</a>
+                    <br/>
+                </div>
+                {{ end }}
+
+    </div>
+
+  </div>
+
+
+</body>
+</html>
+
+
+
+{{ end }}

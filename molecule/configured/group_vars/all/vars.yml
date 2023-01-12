@@ -1,5 +1,10 @@
 ---
 
+alertmanager_custom_templates_files:
+  - "files/alertmanager/templates/*.tmpl"
+  - "files/alertmanager/*.tmpl"
+  - "{{ inventory_dir }}/files/alertmanager/*.tmpl"
+
 alertmanager_service:
   log:
     level: debug

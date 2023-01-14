@@ -131,26 +131,17 @@
   loop_control:
     label: "{{ item | dirname }}"
 
-- name: detect template files
-  ansible.builtin.set_fact:
-    alertmanager_templates_files: "{{ lookup('file_glob', 'files/**/*.tmpl', ignore_missing=True) }}"
-
-- debug:
-    msg: "{{ alertmanager_templates_files }}"
-
 - name: copy alertmanager templates
   become: true
-  copy:
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: "alertmanager_config_dir }}/templates/"
     owner: root
     group: "{{ alertmanager_system_group }}"
     mode: 0640
-  with_fileglob: "{{ alertmanager_custom_templates_files }}"
+  with_alertmanager_templates:
+    - '.tmpl'
   notify:
     - restart alertmanager
-  when:
-    - alertmanager_custom_templates_files is defined
-    - alertmanager_custom_templates_files | length > 0
 
 ...

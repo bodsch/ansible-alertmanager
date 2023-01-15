@@ -19,7 +19,7 @@ OPTIONS="
   --log.level={{ _loglevel }} \
   {% if alertmanager_service.log.format is defined and
         alertmanager_service.log.format in ["logfmt", "json"] %}
-  --log.format={{alertmanager_service.log.format }} \
+  --log.format={{ alertmanager_service.log.format }} \
   {% endif %}
   {# storage configuration #}
   {% if alertmanager_service.storage.path is defined and

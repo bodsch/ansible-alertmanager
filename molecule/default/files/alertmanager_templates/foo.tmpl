@@ -1,0 +1,4 @@
+{{ define "custom_foo_subject" }}
+  {{ $length := len .Alerts.Firing }}
+  Alert {{ .Status | toUpper }} ({{ $length }})  {{ if gt $length 1 }}[for {{ range $index, $element := .Alerts.Firing }}{{if $index}}, {{end}}{{ $element.Labels.instance }}{{ end }}]{{ end }}
+{{ end }}

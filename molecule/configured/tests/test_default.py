@@ -73,18 +73,15 @@ def get_vars(host):
     elif distribution in ['arch', 'artix']:
         operation_system = f"{distribution}linux"
 
-    # print(" -> {} / {}".format(distribution, os))
-    # print(" -> {}".format(base_dir))
-
     file_defaults      = read_ansible_yaml(f"{base_dir}/defaults/main", "role_defaults")
     file_vars          = read_ansible_yaml(f"{base_dir}/vars/main", "role_vars")
-    file_distibution   = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distibution")
+    role_distribution  = read_ansible_yaml(f"{base_dir}/vars/{operation_system}", "role_distribution")
     file_molecule      = read_ansible_yaml(f"{molecule_dir}/group_vars/all/vars", "test_vars")
     # file_host_molecule = read_ansible_yaml("{}/host_vars/{}/vars".format(base_dir, HOST), "host_vars")
 
     defaults_vars      = host.ansible("include_vars", file_defaults).get("ansible_facts").get("role_defaults")
     vars_vars          = host.ansible("include_vars", file_vars).get("ansible_facts").get("role_vars")
-    distibution_vars   = host.ansible("include_vars", file_distibution).get("ansible_facts").get("role_distibution")
+    distibution_vars   = host.ansible("include_vars", role_distribution).get("ansible_facts").get("role_distribution")
     molecule_vars      = host.ansible("include_vars", file_molecule).get("ansible_facts").get("test_vars")
     # host_vars          = host.ansible("include_vars", file_host_molecule).get("ansible_facts").get("host_vars")
 
@@ -93,6 +90,12 @@ def get_vars(host):
     ansible_vars.update(distibution_vars)
     ansible_vars.update(molecule_vars)
     # ansible_vars.update(host_vars)
+
+    # print(pp_json(ansible_vars))
+
+    # remove go-templates with '!unsafe'
+    #
+    _ = ansible_vars.pop("alertmanager_receivers")
 
     templar = Templar(loader=DataLoader(), variables=ansible_vars)
     result = templar.template(ansible_vars, fail_on_undefined=False)

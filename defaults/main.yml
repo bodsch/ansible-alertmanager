@@ -25,6 +25,4 @@ alertmanager_routes: {}
 alertmanager_inhibit_rules: []
 alertmanager_time_intervals: {}
 
-alertmanager_custom_templates_files: {}
-
 ...

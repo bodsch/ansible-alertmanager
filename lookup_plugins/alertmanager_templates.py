@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# (c) 2023,Bodo Schulz <bodo@boone-schulz.de>
+# (c) 2022-2023, Bodo Schulz <bodo@boone-schulz.de>
 # Apache License  (see COPYING or https://opensource.org/licenses/Apache-2.0)
 # SPDX-License-Identifier: Apache-2.0
 
@@ -41,6 +41,20 @@ EXAMPLES = """
     mode: 0640
   with_fileglob:
     - ".tmpl"
+
+- name: Copy each template over that matches the given pattern
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/alertmanager/templates/"
+    owner: "root"
+    mode: 0640
+  with_fileglob:
+    - ".tmpl"
+  vars:
+    alertmanager:
+      search_path:
+        - ".."
+        - "../.."
 """
 
 RETURN = """
@@ -61,11 +75,27 @@ class LookupModule(LookupBase):
         """
         """
         self.set_options(direct=kwargs)
+
         paths = []
-        if 'ansible_search_path' in variables:
-            paths = variables['ansible_search_path']
+        ansible_search_path = variables.get('ansible_search_path', None)
+        role_path = variables.get('role_path')
+        alertmanager_search_path = variables.get('alertmanager', {}).get('search_path', None)
+
+        # display.v(f" - ansible_search_path : {ansible_search_path}")
+        # display.v(f" - base dir            : {self.get_basedir(variables)}")
+        # display.v(f" - role path           : {role_path}")
+        # display.v(f" - template search path: {alertmanager_search_path}")
+        # display.v(f" - alertmanager        : {variables.get('alertmanager', {})}")
+
+        if ansible_search_path:
+            paths = ansible_search_path
         else:
-            paths = [self.get_basedir(variables)]
+            paths.append(self.get_basedir(variables))
+
+        if alertmanager_search_path:
+            if isinstance(alertmanager_search_path, list):
+                for p in alertmanager_search_path:
+                    paths.append(os.path.join(role_path, p))
 
         search_path = ['templates', 'files']
 
@@ -78,7 +108,6 @@ class LookupModule(LookupBase):
             for p in paths:
                 for sp in search_path:
                     path = os.path.join(p, sp)
-
                     display.vv(f" - lookup in directory: {path}")
                     r = self._find_recursive(folder=path, extension=term)
                     if len(r) > 0:
@@ -86,7 +115,7 @@ class LookupModule(LookupBase):
 
         ret = self._flatten(found_templates)
 
-        display.v(f"found_templates {ret}")
+        display.vv(f"found_templates {ret}")
 
         return ret
 

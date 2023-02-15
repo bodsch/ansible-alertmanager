@@ -17,6 +17,7 @@
     owner: root
     group: "{{ alertmanager_system_group }}"
     mode: 0640
+  register: alertmanger_config
   notify:
     - validate config
 

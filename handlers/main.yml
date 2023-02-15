@@ -5,6 +5,10 @@
   ansible.builtin.service:
     name: alertmanager
     state: restarted
+  when:
+    - alertmanger_valid_config is defined
+    - alertmanger_valid_config.rc is defined
+    - alertmanger_valid_config.rc == 0
 
 - name: reload alertmanager
   become: true
@@ -13,11 +17,15 @@
     state: reloaded
 
 - name: validate config
-  ansible.builtin.command: |
-    /usr/bin/amtool \
-      check-config \
-      --verbose \
-      {{ alertmanager_config_dir }}/alertmanager.yml
+  amtool:
+    verbose: true
+    state: check
+    config: "{{ alertmanager_config_dir }}/alertmanager.yml"
+  register: alertmanger_valid_config
+  when:
+    - alertmanger_config is defined
+    - alertmanger_config.changed is defined
+    - alertmanger_config.changed
   notify:
     - restart alertmanager
 

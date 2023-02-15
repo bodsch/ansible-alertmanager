@@ -1,6 +1,12 @@
 ---
 
-- name: ensure prometheus is enabled on boot
+- name: validate alertmanager config
+  amtool:
+    verbose: true
+    state: check
+    config: "{{ alertmanager_config_dir }}/alertmanager.yml"
+
+- name: ensure service is enabled on boot
   become: true
   ansible.builtin.service:
     name: alertmanager

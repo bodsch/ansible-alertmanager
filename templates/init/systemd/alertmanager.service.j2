@@ -6,18 +6,15 @@ After            = network-online.target
 
 [Service]
 Type             = simple
-Environment      = "GOMAXPROCS={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
 EnvironmentFile  = {{ alertmanager_defaults_directory }}/alertmanager
 
 User             = {{ alertmanager_system_user }}
 Group            = {{ alertmanager_system_group }}
 
 ExecStartPre     = /usr/bin/amtool check-config --verbose {{ alertmanager_config_dir }}/alertmanager.yml
-
-ExecReload       = /bin/kill -HUP $MAINPID
 ExecStart        = /usr/bin/alertmanager $OPTIONS
+ExecReload       = /bin/kill -HUP $MAINPID
 
-LimitNOFILE      = 65000
 SyslogIdentifier = alertmanager
 Restart          = always
 

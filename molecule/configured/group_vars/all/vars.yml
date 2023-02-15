@@ -133,8 +133,8 @@ alertmanager_time_intervals:
     time_intervals:
       # Mute on Saturdays and Sundays, all day.
       - weekdays:
-        - 'Saturday'
-        - 'Sunday'
+          - 'Saturday'
+          - 'Sunday'
       # Mute in the morning and in the evening, any day.
       - times:
           - start_time: '00:00'

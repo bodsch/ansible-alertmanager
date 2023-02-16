@@ -73,6 +73,8 @@
         owner: root
         group: "{{ alertmanager_system_group }}"
         mode: 0640
+      notify:
+        - reload alertmanager
 
     - name: create systemd service unit
       ansible.builtin.template:
@@ -147,6 +149,7 @@
         - ".."
         - "../.."
   notify:
-    - restart alertmanager
+    - validate config
+    - reload alertmanager
 
 ...

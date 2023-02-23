@@ -1,5 +1,5 @@
 ---
-name: alertmanager with configuration
+name: alertmanager with custom template
 
 on:
   schedule:

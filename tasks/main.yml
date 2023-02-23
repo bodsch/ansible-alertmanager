@@ -6,10 +6,14 @@
 - name: download
   ansible.builtin.include_tasks: download.yml
   when:
-    - not stat_alertmanager_binary.stat.exists
+    - not stat_alertmanager_binary.stat.exists or
+      not stat_alertmanager_binary.stat.path == alertmanager_install_path ~ '/alertmanager'
 
 - name: install
   ansible.builtin.include_tasks: install.yml
+  when:
+    - not stat_alertmanager_binary.stat.exists or
+      not stat_alertmanager_binary.stat.path == alertmanager_install_path ~ '/alertmanager'
 
 - name: configure
   ansible.builtin.include_tasks: configure.yml

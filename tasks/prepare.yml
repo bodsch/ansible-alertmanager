@@ -40,7 +40,10 @@
   when:
     - alertmanager_requirements | default([]) | count > 0
 
-- name: latest release
+- name: get latest release
+  delegate_to: localhost
+  become: false
+  run_once: true
   when:
     - alertmanager_version == "latest"
   block:
@@ -48,23 +51,16 @@
       delegate_to: localhost
       become: false
       run_once: true
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/prometheus/alertmanager/releases/latest"
-        method: GET
-        return_content: true
-        status_code: 200
-        body_format: json
-        validate_certs: false
+      github_latest:
+        project: prometheus
+        repository: alertmanager
         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-      # no_log: "{{ not lookup('env', 'ANSIBLE_DEBUG') | bool }}"
       register: _latest_release
-      until: _latest_release.status == 200
-      retries: 5
 
     - name: re-define alertmanager_version
       ansible.builtin.set_fact:
-        alertmanager_version: "{{ _latest_release.json.tag_name[1:] }}"
+        alertmanager_version: "{{ _latest_release.latest_release }}"
 
 - name: detect our installation path '{{ alertmanager_install_path | dirname }}'
   ansible.builtin.stat:

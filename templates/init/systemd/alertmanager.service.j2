@@ -2,6 +2,7 @@
 
 [Unit]
 Description      = The Alertmanager handles alerts sent by client applications such as the Prometheus server.
+Documentation    = https://prometheus.io/docs/alerting/alertmanager/
 After            = network-online.target
 
 [Service]
@@ -17,6 +18,7 @@ ExecReload       = /bin/kill -HUP $MAINPID
 
 SyslogIdentifier = alertmanager
 Restart          = always
+TimeoutStopSec   = 20s
 
 [Install]
 WantedBy         = multi-user.target

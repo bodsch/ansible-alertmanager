@@ -61,51 +61,6 @@
     group: "{{ alertmanager_system_group }}"
     mode: 0755
 
-- name: systemd
-  when:
-    - ansible_service_mgr | lower == "systemd"
-  block:
-    - name: create alertmanager run configuration
-      ansible.builtin.template:
-        src: "alertmanager.j2"
-        dest: "{{ alertmanager_defaults_directory }}/alertmanager"
-        force: true
-        owner: root
-        group: "{{ alertmanager_system_group }}"
-        mode: 0640
-      notify:
-        - reload alertmanager
-
-    - name: create systemd service unit
-      ansible.builtin.template:
-        src: "init/systemd/alertmanager.service.j2"
-        dest: "{{ systemd_lib_directory }}/alertmanager.service"
-        owner: root
-        group: root
-        mode: 0644
-      notify:
-        - daemon-reload
-
-- name: openrc
-  when:
-    - ansible_service_mgr | lower == "openrc"
-  block:
-    - name: create openrc service configuration
-      ansible.builtin.template:
-        src: "init/openrc/conf.d/alertmanager.j2"
-        dest: "/etc/conf.d/alertmanager"
-        owner: root
-        group: root
-        mode: 0644
-
-    - name: create openrc init configuration
-      ansible.builtin.template:
-        src: "init/openrc/init.d/alertmanager.j2"
-        dest: "/etc/init.d/alertmanager"
-        owner: root
-        group: root
-        mode: 0750
-
 - name: create alertmanager configuration directory
   ansible.builtin.file:
     path: "{{ alertmanager_config_dir }}"
@@ -132,24 +87,5 @@
   loop: "{{ alertmanager_templates }}"
   loop_control:
     label: "{{ item | dirname }}"
-
-- name: copy alertmanager templates
-  become: true
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "{{ alertmanager_config_dir }}/templates/"
-    owner: root
-    group: "{{ alertmanager_system_group }}"
-    mode: 0640
-  with_alertmanager_templates:
-    - ".tmpl"
-  vars:
-    alertmanager:
-      search_path:
-        - ".."
-        - "../.."
-  notify:
-    - validate config
-    - reload alertmanager
 
 ...

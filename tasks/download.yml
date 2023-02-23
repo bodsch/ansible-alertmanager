@@ -6,12 +6,24 @@
   run_once: true
   block:
     - name: get checksum list
-      ansible.builtin.set_fact:
-        __alertmanager_checksums: "{{ lookup('url', alertmanager_release_download_url + '/download/' + __alertmanager_files.checksum, wantlist=True) | list }}"
+      github_checksum:
+        project: prometheus
+        repository: alertmanager
+        checksum_file: sha256sums.txt
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+        architecture: "{{ ansible_architecture }}"
+        system: "{{ ansible_facts.system }}"
+        version: "{{ alertmanager_version }}"
+      register: _latest_checksum
 
-    - name: get checksum for {{ go_arch }} architecture
+    - name: define checksum for {{ go_arch }} architecture
       ansible.builtin.set_fact:
-        __alertmanager_checksum: "{{ __alertmanager_checksums | alertmanager_checksum('linux', go_arch) }}"
+        __alertmanager_checksum: "{{ _latest_checksum.checksum }}"
+      when:
+        - _latest_checksum.rc == 0
+        - _latest_checksum.checksum is defined
+        - _latest_checksum.checksum | string | length > 0
 
 - name: download alertmanager binary archive
   become: false

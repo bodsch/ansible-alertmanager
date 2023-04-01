@@ -13,7 +13,7 @@ then
     if [ -z "${collections_installed}" ]
     then
       echo "Install the required collection '${collection}'"
-      # ansible-galaxy collection install ${collection}
+      ansible-galaxy collection install ${collection}
     else
       collection_version=$(echo "${collections_installed}" | awk -F ' ' '{print $2}')
 

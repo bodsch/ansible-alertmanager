@@ -51,7 +51,7 @@
       delegate_to: localhost
       become: false
       run_once: true
-      github_latest:
+      bodsch.scm.github_latest:
         project: prometheus
         repository: alertmanager
         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"

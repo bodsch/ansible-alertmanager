@@ -6,7 +6,7 @@
   run_once: true
   block:
     - name: get checksum list
-      github_checksum:
+      bodsch.scm.github_checksum:
         project: prometheus
         repository: alertmanager
         checksum_file: sha256sums.txt
@@ -14,7 +14,7 @@
         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
         architecture: "{{ ansible_architecture }}"
         system: "{{ ansible_facts.system }}"
-        version: "{{ alertmanager_version }}"
+        version: "v{{ alertmanager_version }}"
       register: _latest_checksum
 
     - name: define checksum for {{ go_arch }} architecture

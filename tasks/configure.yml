@@ -47,12 +47,11 @@
 
 - name: detect alertmanager templates
   ansible.builtin.set_fact:
-    _alertmanager_templates: "{{ lookup('alertmanager_templates', '.tmpl').split(',') }}"
+    _alertmanager_templates: "{{ lookup('bodsch.core.file_glob', '.tmpl').split(',') }}"
   vars:
-    alertmanager:
-      search_path:
-        - ".."
-        - "../.."
+    search_path:
+      - ".."
+      - "../.."
 
 - name: copy alertmanager templates
   become: true

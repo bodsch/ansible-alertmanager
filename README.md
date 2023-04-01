@@ -26,6 +26,21 @@ By default it is `${HOME}/.cache/ansible/alertmanager`.
 If this type of installation is not desired, the download can take place directly on the target system. 
 However, this must be explicitly activated by setting `alertmanager_direct_download` to `true`.
 
+## Requirements & Dependencies
+
+Ansible Collections
+
+- [bodsch.core](https://github.com/bodsch/ansible-collection-core)
+- [bodsch.scm](https://github.com/bodsch/ansible-collection-scm)
+
+```bash
+ansible-galaxy collection install bodsch.core
+ansible-galaxy collection install bodsch.scm
+```
+or
+```bash
+ansible-galaxy collection install --requirements-file collections.yml
+```
 
 ## Operating systems
 
@@ -271,7 +286,7 @@ alertmanager_time_intervals:
 
 In order to be able to use your own templates, it is sufficient to provide these files with a file extension 
 `.tmpl` and to make them available to the role in a directory called `files` or `templates`.
-The [lookup plugin](lookup_plugins/alertmanager_templates.py) will pick up these files.  
+The lookup plugin `bodsch.core.file_glob` will pick up these files.  
 
 ```yaml
 alertmanager_templates:
@@ -289,4 +304,4 @@ alertmanager_templates:
 
 [Apache](LICENSE)
 
-`FREE SOFTWARE, HELL YEAH!`
+**FREE SOFTWARE, HELL YEAH!**

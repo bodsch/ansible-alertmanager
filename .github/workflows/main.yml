@@ -2,7 +2,6 @@
 name: CI
 
 on:
-  workflow_dispatch:
   workflow_run:
     workflows:
       - "code linter"
@@ -30,6 +29,8 @@ jobs:
         ansible-version:
           - '5.1'
           - '6.1'
+        scenario:
+          - default
 
     steps:
       - name: check out the codebase.
@@ -73,7 +74,8 @@ jobs:
         ansible-version:
           - '5.1'
           - '6.1'
-
+        scenario:
+          - default
     steps:
       - name: check out the codebase.
         uses: actions/checkout@v3

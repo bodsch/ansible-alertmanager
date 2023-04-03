@@ -1,10 +1,8 @@
 ---
-- name: prepare container
+
+- name: information
   hosts: all
   gather_facts: true
-
-  environment:
-    NETRC: ''
 
   pre_tasks:
     - name: arch- / artixlinux
@@ -33,6 +31,9 @@
           - "distribution version : {{ ansible_distribution_major_version }}"
           - "ansible version      : {{ ansible_version.full }}"
           - "python version       : {{ ansible_python.version.major }}.{{ ansible_python.version.minor }}"
+
+- name: prepare container
+  hosts: instance
 
   roles:
     - role: prometheus

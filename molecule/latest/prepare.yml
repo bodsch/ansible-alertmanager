@@ -1,10 +1,8 @@
 ---
-- name: prepare container
+
+- name: information
   hosts: all
   gather_facts: true
-
-  environment:
-    NETRC: ''
 
   pre_tasks:
     - name: arch- / artixlinux

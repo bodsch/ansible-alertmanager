@@ -20,10 +20,6 @@
         - default.yaml
       skip: true
 
-- name: update package cache
-  ansible.builtin.package:
-    update_cache: true
-
 - name: define delegate instance for download handling
   ansible.builtin.set_fact:
     alertmanager_delegate_to: "{{ ansible_host }}"
@@ -139,14 +135,6 @@
     owner: "{{ alertmanager_system_user }}"
     group: "{{ alertmanager_system_group }}"
     mode: 0755
-
-- name: create ansible local facts directory
-  ansible.builtin.file:
-    dest: /etc/ansible/facts.d
-    state: directory
-    owner: root
-    group: root
-    mode: 0775
 
 - name: merge alertmanager configuration between defaults and custom
   ansible.builtin.set_fact:

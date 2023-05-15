@@ -34,11 +34,11 @@
     - alertmanager
     - amtool
 
-- name: create local facts
-  ansible.builtin.template:
-    src: ansible_facts.j2
-    dest: /etc/ansible/facts.d/alertmanager.fact
-    mode: 0755
+- name: create custom fact file
+  bodsch.core.facts:
+    name: alertmanager
+    facts:
+      version: "{{ alertmanager_version }}"
 
 - name: create link to binary
   ansible.builtin.file:

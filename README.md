@@ -3,6 +3,9 @@
 
 Ansible role to install and configure [alertmanager](https://github.com/prometheus/alertmanager).
 
+> Further development of this Ansible role has been moved to Collection [bodsch.prometheus](https://github.com/bodsch/ansible-collection-prometheus).
+> **This repository will therefore no longer be actively maintained.**
+
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodsch/ansible-alertmanager/main.yml?branch=main)][ci]
 [![GitHub issues](https://img.shields.io/github/issues/bodsch/ansible-alertmanager)][issues]
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bodsch/ansible-alertmanager)][releases]
